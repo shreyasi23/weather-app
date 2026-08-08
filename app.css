@@ -78,3 +78,8 @@
   padding: 10px;
   border-radius: 8px;
 }
+
+.weather-forecast {
+  display: flex;
+  flex-direction: column;
+}
