@@ -1,6 +1,7 @@
 // constants
 const API_KEY = "75122a74c0204989a3e23948260408";
 const WEATHER_API = `http://api.weatherapi.com/v1`;
+const nonLetterCharRegex = /[^a-zA-Z]/;
 
 /** getData function fetches weather data
  * @param city - name of the city for which weather data is requested
@@ -8,14 +9,14 @@ const WEATHER_API = `http://api.weatherapi.com/v1`;
  * current fetches the weather at the point of time when the request is made and forecast fetches weather for 3 days and each hour of the day
  * @returns weather data in JSON format
  **/
-const getData = async (city, requirment) => {
+const getData = async (city) => {
   const nonLetterCharRegex = /[^a-zA-z]/;
   if (nonLetterCharRegex.test(city)) {
     alert("Enter a valid city name");
     return;
   }
 
-  const url = `${WEATHER_API}/${requirment}.json?key=${API_KEY}&q=${city.trim()}`;
+  const url = `${WEATHER_API}/forecast.json?key=${API_KEY}&q=${city.trim()}&days=5`;
   let response;
   try {
     response = await fetch(url);
@@ -32,7 +33,12 @@ const getData = async (city, requirment) => {
 
 const getUserInput = () => {
   const userInput = document.querySelector(".search-input");
-  return userInput.value.toLowerCase();
+  const city = userInput.value.toLowerCase();
+  if (city.length === 0 || nonLetterCharRegex.test(city)) {
+    throw new Error("Enter a valid city name");
+    return;
+  }
+  return city;
 };
 
 const setProp = (element, prop, value, elemName) => {
@@ -49,16 +55,16 @@ const getCurrentWeather = async () => {
   let city, data;
 
   // get user input
-  city = getUserInput();
-  const nonLetterCharRegex = /[^a-zA-Z]/;
-  if (city.length === 0 || nonLetterCharRegex.test(city)) {
-    alert("Enter a valid city name");
+  try {
+    city = getUserInput();
+  } catch (e) {
+    alert(e.message);
     return;
   }
 
   // get weather data
   try {
-    data = await getData(city, "current");
+    data = await getData(city);
   } catch (e) {
     console.error(e.message);
     return;
@@ -129,6 +135,61 @@ const getCurrentWeather = async () => {
   );
 };
 
+const getWeatherForecastOneDay = async (index) => {
+  let data, city;
+  try {
+    city = getUserInput();
+  } catch (e) {
+    alert(e.message);
+    return;
+  }
+
+  try {
+    data = await getData(city);
+  } catch (e) {
+    console.error(e.message);
+    return;
+  }
+
+  const hours = data.forecast.forecastday[index].hour;
+  const cards = hours.map((hour, i) => {
+    const dateTime = hour.time;
+    // adding T to make time according to format which JS Date parser understands. (2026-08-11T08:00) ISO style date-time
+    const date = new Date(dateTime.replace(" ", "T"));
+    const convertedTime = date
+      .toLocaleTimeString("en-us", {
+        hour: "numeric",
+        hour12: true,
+      })
+      .toLowerCase();
+
+    const weatherIcon = hour.condition.icon;
+
+    const temp = hour.temp_c;
+    const listItem = document.createElement("li");
+    listItem.setAttribute("class", "forecast-card");
+    // listItem.setAttribute("id", "abc");
+    const forecastCardMkp = `
+  <li class="forecast-card" id="ABC">
+    <p id="time">${convertedTime}</p>
+    <img id="weather-img" alt="weather image" src="https:${weatherIcon}">
+    <p id="temp">${temp}\u00B0C</p>
+  </li>
+  `;
+    return forecastCardMkp;
+  });
+
+  const forecastList = document.querySelector("#forecastToday");
+  if (!forecastList) {
+    console.error("Element Forecast list not found");
+    const weatherData = document.querySelector("weather-data");
+    weatherData.insertAdjacentElement("beforeend", `<p>Data not found</p>`);
+    return;
+  }
+
+  forecastList.innerHTML = cards.join("\n");
+};
+
 const main = () => {
   let searchBtn;
   searchBtn = document.querySelector(".search-btn");
@@ -139,6 +200,7 @@ const main = () => {
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
     await getCurrentWeather();
+    await getWeatherForecastOneDay(0);
   });
 };
 
