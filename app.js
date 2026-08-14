@@ -166,11 +166,13 @@ const getWeatherForecastOneDay = async (index) => {
     const weatherIcon = hour.condition.icon;
 
     const temp = hour.temp_c;
+
+    const id = hour.time_epoch;
     const listItem = document.createElement("li");
     listItem.setAttribute("class", "forecast-card");
     // listItem.setAttribute("id", "abc");
     const forecastCardMkp = `
-  <li class="forecast-card" id="ABC">
+  <li class="forecast-card" id="${id}">
     <p id="time">${convertedTime}</p>
     <img id="weather-img" alt="weather image" src="https:${weatherIcon}">
     <p id="temp">${temp}\u00B0C</p>
@@ -190,7 +192,78 @@ const getWeatherForecastOneDay = async (index) => {
   forecastList.innerHTML = cards.join("\n");
 };
 
-const main = () => {
+const renderWeatherForecast = async (day) => {
+  // get tabs
+  // find tab index by matching the element involved in click event
+  // pass the index to getWeatherForecastOneDay()
+  let data;
+  try {
+    data = await getData("hyderabad");
+  } catch (e) {
+    console.error(e.message);
+    return;
+  }
+
+  const dates = data.forecast.forecastday.map((item) => {
+    return item.date;
+  });
+
+  const index = dates.findIndex((date) => {
+    const weekday = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+    return weekday === day;
+  });
+
+  if (!index || index !== -1) {
+    console.error("Requested day not found in data");
+  }
+
+  return await getWeatherForecastOneDay(index);
+};
+
+// get local date
+const getDay = (date) => {
+  const now = new Date();
+  const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return today;
+};
+
+const renderDayTabs = async () => {
+  let data;
+  try {
+    data = await getData("hyderabad");
+  } catch (e) {
+    console.error(e.message);
+    return;
+  }
+
+  const dates = data.forecast.forecastday.map((item) => item.date);
+  const days = dates.map((date) => {
+    const day = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+    return day;
+  });
+
+  const tabsList = document.querySelector(".nav.nav-underline");
+  if (!tabsList) {
+    console.error("tabs list not found");
+    return;
+  }
+
+  const tabs = days.map((day) => {
+    return `
+    <li class="nav-item">
+      <a class="nav-link" aria-current="page" href="#" id="${day}">${day}</a>
+    </li>
+    `;
+  });
+
+  tabsList.innerHTML = tabs.join("\n");
+};
+
+const main = async () => {
   let searchBtn;
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
@@ -202,6 +275,17 @@ const main = () => {
     await getCurrentWeather();
     await getWeatherForecastOneDay(0);
   });
+
+  await renderDayTabs();
+
+  const tabs = document.querySelectorAll("li a");
+
+  for (let tab of tabs) {
+    tab.addEventListener("click", async (event) => {
+      const tabID = event.currentTarget.id;
+      await renderWeatherForecast(tabID);
+    });
+  }
 };
 
 main();
