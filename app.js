@@ -65,15 +65,17 @@ const setProp = (element, prop, value, elemName) => {
 /**
  * Render the current weather for a given city
  */
-const getCurrentWeather = async () => {
-  let city, data;
+const getCurrentWeather = async (city) => {
+  let data;
 
   // get user input
-  try {
-    city = getUserInput();
-  } catch (e) {
-    alert(e.message);
-    return;
+  if (!city) {
+    try {
+      city = getUserInput();
+    } catch (e) {
+      alert(e.message);
+      return;
+    }
   }
 
   // get weather data
@@ -153,13 +155,15 @@ const getCurrentWeather = async () => {
  * Renders one day's hourly weather forecast for the searched city
  * @param {*} index day of the week
  */
-const getWeatherForecastOneDay = async (index) => {
-  let data, city;
-  try {
-    city = getUserInput();
-  } catch (e) {
-    alert(e.message);
-    return;
+const getWeatherForecastOneDay = async (index, city) => {
+  let data;
+  if (!city) {
+    try {
+      city = getUserInput();
+    } catch (e) {
+      alert(e.message);
+      return;
+    }
   }
 
   try {
@@ -215,10 +219,6 @@ const getWeatherForecastOneDay = async (index) => {
  * @param {*} day name of the week day
  */
 const renderWeatherForecast = async (day) => {
-  // get tabs
-  // find tab index by matching the element involved in click event
-  // pass the index to getWeatherForecastOneDay()
-
   // get weather data for a random city, for example hyderabad
   // at this point we need the data only to get the array of weather forecast
   // which is used to determine the index of the day for which hourly forecast is to be rendered
@@ -303,6 +303,8 @@ const main = async () => {
   let searchBtn;
 
   await renderDayTabs();
+  await getCurrentWeather("Hyderabad");
+  await getWeatherForecastOneDay(0, "Hyderabad");
 
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
