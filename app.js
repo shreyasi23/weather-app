@@ -31,6 +31,11 @@ const getData = async (city) => {
   return response.json();
 };
 
+/**
+ * Get the name of the city from search input and return it only if the input is
+ * non-empty string and has no numbers and special characters
+ * @returns name of the city
+ */
 const getUserInput = () => {
   const userInput = document.querySelector(".search-input");
   const city = userInput.value.toLowerCase();
@@ -41,8 +46,14 @@ const getUserInput = () => {
   return city;
 };
 
+/**
+ * function to assign a value to a property of an element
+ * @param {*} element DOM node
+ * @param {*} prop name of the property
+ * @param {*} value value to be assigned to the property
+ * @param {*} elemName name of the element
+ */
 const setProp = (element, prop, value, elemName) => {
-  // debugger;
   if (!element) {
     console.error(`Required element ${elemName} was not found`);
     return;
@@ -51,6 +62,9 @@ const setProp = (element, prop, value, elemName) => {
   element[prop] = value;
 };
 
+/**
+ * Render the current weather for a given city
+ */
 const getCurrentWeather = async () => {
   let city, data;
 
@@ -82,7 +96,7 @@ const getCurrentWeather = async () => {
   setProp(
     currentTemp,
     "textContent",
-    `${data.current.temp_c}\u00B0C`,
+    `${Math.round(data.current.temp_c)}\u00B0C`,
     "currentTemp",
   );
 
@@ -130,11 +144,15 @@ const getCurrentWeather = async () => {
   setProp(
     feelsLikeText,
     "textContent",
-    `Feels like ${data.current.feelslike_c}\u00B0C`,
+    `Feels like ${Math.round(data.current.feelslike_c)}\u00B0C`,
     "feels like",
   );
 };
 
+/**
+ * Renders one day's hourly weather forecast for the searched city
+ * @param {*} index day of the week
+ */
 const getWeatherForecastOneDay = async (index) => {
   let data, city;
   try {
@@ -154,7 +172,8 @@ const getWeatherForecastOneDay = async (index) => {
   const hours = data.forecast.forecastday[index].hour;
   const cards = hours.map((hour, i) => {
     const dateTime = hour.time;
-    // adding T to make time according to format which JS Date parser understands. (2026-08-11T08:00) ISO style date-time
+    // adding T to make time according to format which JS Date
+    // parser understands (2026-08-11T08:00) ISO style date-time
     const date = new Date(dateTime.replace(" ", "T"));
     const convertedTime = date
       .toLocaleTimeString("en-us", {
@@ -165,12 +184,11 @@ const getWeatherForecastOneDay = async (index) => {
 
     const weatherIcon = hour.condition.icon;
 
-    const temp = hour.temp_c;
+    const temp = Math.round(hour.temp_c);
 
     const id = hour.time_epoch;
     const listItem = document.createElement("li");
     listItem.setAttribute("class", "forecast-card");
-    // listItem.setAttribute("id", "abc");
     const forecastCardMkp = `
   <li class="forecast-card" id="${id}">
     <p id="time">${convertedTime}</p>
@@ -192,10 +210,18 @@ const getWeatherForecastOneDay = async (index) => {
   forecastList.innerHTML = cards.join("\n");
 };
 
+/**
+ * Render hourly weather forecast for next 2 days from the current day of the week
+ * @param {*} day name of the week day
+ */
 const renderWeatherForecast = async (day) => {
   // get tabs
   // find tab index by matching the element involved in click event
   // pass the index to getWeatherForecastOneDay()
+
+  // get weather data for a random city, for example hyderabad
+  // at this point we need the data only to get the array of weather forecast
+  // which is used to determine the index of the day for which hourly forecast is to be rendered
   let data;
   try {
     data = await getData("hyderabad");
@@ -204,10 +230,12 @@ const renderWeatherForecast = async (day) => {
     return;
   }
 
+  // collect the date strings
   const dates = data.forecast.forecastday.map((item) => {
     return item.date;
   });
 
+  // get the index of the day in the weather forecast array
   const index = dates.findIndex((date) => {
     const weekday = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
       weekday: "long",
@@ -219,6 +247,7 @@ const renderWeatherForecast = async (day) => {
     console.error("Requested day not found in data");
   }
 
+  // render hourly forecast for the given day
   return await getWeatherForecastOneDay(index);
 };
 
@@ -229,7 +258,11 @@ const getDay = (date) => {
   return today;
 };
 
+/**
+ * render tabs with name of the present, tomorrow and day after tomorrow days
+ */
 const renderDayTabs = async () => {
+  // get weather forecast data for 3 days from now
   let data;
   try {
     data = await getData("hyderabad");
@@ -238,6 +271,7 @@ const renderDayTabs = async () => {
     return;
   }
 
+  // get the date strings and convert them into week day strings
   const dates = data.forecast.forecastday.map((item) => item.date);
   const days = dates.map((date) => {
     const day = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
@@ -246,6 +280,7 @@ const renderDayTabs = async () => {
     return day;
   });
 
+  // create list items to render week days as tabs
   const tabsList = document.querySelector(".nav.nav-underline");
   if (!tabsList) {
     console.error("tabs list not found");
@@ -263,8 +298,12 @@ const renderDayTabs = async () => {
   tabsList.innerHTML = tabs.join("\n");
 };
 
+// main function
 const main = async () => {
   let searchBtn;
+
+  await renderDayTabs();
+
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
     console.log("Search button not found");
@@ -275,8 +314,6 @@ const main = async () => {
     await getCurrentWeather();
     await getWeatherForecastOneDay(0);
   });
-
-  await renderDayTabs();
 
   const tabs = document.querySelectorAll("li a");
 
