@@ -176,27 +176,38 @@ const getWeatherForecastOneDay = async (index, city) => {
 
   const hours = data.forecast.forecastday[index].hour;
   const cards = hours.map((hour, i) => {
+    let currentTime, convertedTime;
     const dateTime = hour.time;
     // adding T to make time according to format which JS Date
     // parser understands (2026-08-11T08:00) ISO style date-time
     const date = new Date(dateTime.replace(" ", "T"));
-    const convertedTime = date
-      .toLocaleTimeString("en-us", {
-        hour: "numeric",
-        hour12: true,
-      })
-      .toLowerCase();
+    const now = new Date();
+    if (index === 0) {
+      if (date.getHours() === now.getHours()) {
+        currentTime = "Now";
+      }
+    }
+
+    if (!currentTime) {
+      convertedTime = date
+        .toLocaleTimeString("en-us", {
+          hour: "numeric",
+          hour12: true,
+        })
+        .toLowerCase();
+    }
 
     const weatherIcon = hour.condition.icon;
 
     const temp = Math.round(hour.temp_c);
 
     const id = hour.time_epoch;
+
     const listItem = document.createElement("li");
     listItem.setAttribute("class", "forecast-card");
     const forecastCardMkp = `
-  <li class="forecast-card" id="${id}">
-    <p id="time">${convertedTime}</p>
+  <li class="forecast-card ${currentTime ? "current-hour" : ""}" id="${id}">
+    <p id="time">${currentTime ? currentTime : convertedTime}</p>
     <img id="weather-img" alt="weather image" src="https:${weatherIcon}">
     <p id="temp">${temp}\u00B0C</p>
   </li>
@@ -213,6 +224,12 @@ const getWeatherForecastOneDay = async (index, city) => {
   }
 
   forecastList.innerHTML = cards.join("\n");
+  const currentHourItem = document.querySelector(".current-hour");
+  currentHourItem.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+    inline: "start",
+  });
 };
 
 /**
