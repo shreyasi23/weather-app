@@ -2,6 +2,7 @@
 const API_KEY = "75122a74c0204989a3e23948260408";
 const WEATHER_API = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z]/;
+const loadingText = document.querySelector("#loadingText");
 
 /** getData function fetches weather data
  * @param city - name of the city for which weather data is requested
@@ -303,8 +304,10 @@ const main = async () => {
   let searchBtn;
 
   await renderDayTabs();
+  loadingText.hidden = false;
   await getCurrentWeather("Hyderabad");
   await getWeatherForecastOneDay(0, "Hyderabad");
+  loadingText.hidden = true;
 
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
@@ -313,8 +316,10 @@ const main = async () => {
   }
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
+    loadingText.hidden = false;
     await getCurrentWeather();
     await getWeatherForecastOneDay(0);
+    loadingText.hidden = true;
   });
 
   const tabs = document.querySelectorAll("li a");
