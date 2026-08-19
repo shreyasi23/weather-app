@@ -94,7 +94,7 @@ const collectWeatherForecastData = (firstDay) => {
       data["id"] = item.time_epoch;
       data["time"] = time;
       data["weatherIcon"] = item.condition.icon;
-      data["temp"] = item.temp_c;
+      data["temp"] = Math.round(item.temp_c);
 
       arr.push(data);
     });
