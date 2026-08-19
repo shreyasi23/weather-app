@@ -3,6 +3,21 @@ const API_KEY = "75122a74c0204989a3e23948260408";
 const WEATHER_API = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z]/;
 const loadingText = document.querySelector("#loadingText");
+let WEATHER_DATA;
+/**
+ * Get the name of the city from search input and return it only if the input is
+ * non-empty string and has no numbers and special characters
+ * @returns name of the city
+ */
+const getUserInput = () => {
+  const userInput = document.querySelector(".search-input");
+  const city = userInput.value.toLowerCase();
+  if (city.length === 0 || nonLetterCharRegex.test(city)) {
+    throw new Error("Enter a valid city name");
+    return;
+  }
+  return city;
+};
 
 /** getData function fetches weather data
  * @param city - name of the city for which weather data is requested
@@ -12,9 +27,20 @@ const loadingText = document.querySelector("#loadingText");
  **/
 const getData = async (city) => {
   const nonLetterCharRegex = /[^a-zA-z]/;
-  if (nonLetterCharRegex.test(city)) {
-    alert("Enter a valid city name");
-    return;
+
+  // get user input
+  if (!city) {
+    try {
+      city = getUserInput();
+    } catch (e) {
+      alert(e.message);
+      return;
+    }
+
+    if (nonLetterCharRegex.test(city)) {
+      alert("Enter a valid city name");
+      return;
+    }
   }
 
   const url = `${WEATHER_API}/forecast.json?key=${API_KEY}&q=${city.trim()}&days=5`;
@@ -30,21 +56,6 @@ const getData = async (city) => {
   }
 
   return response.json();
-};
-
-/**
- * Get the name of the city from search input and return it only if the input is
- * non-empty string and has no numbers and special characters
- * @returns name of the city
- */
-const getUserInput = () => {
-  const userInput = document.querySelector(".search-input");
-  const city = userInput.value.toLowerCase();
-  if (city.length === 0 || nonLetterCharRegex.test(city)) {
-    throw new Error("Enter a valid city name");
-    return;
-  }
-  return city;
 };
 
 /**
@@ -66,26 +77,8 @@ const setProp = (element, prop, value, elemName) => {
 /**
  * Render the current weather for a given city
  */
-const getCurrentWeather = async (city) => {
-  let data;
-
-  // get user input
-  if (!city) {
-    try {
-      city = getUserInput();
-    } catch (e) {
-      alert(e.message);
-      return;
-    }
-  }
-
-  // get weather data
-  try {
-    data = await getData(city);
-  } catch (e) {
-    console.error(e.message);
-    return;
-  }
+const getCurrentWeather = () => {
+  const data = WEATHER_DATA;
 
   const location = document.querySelector("#location");
   setProp(
@@ -156,23 +149,8 @@ const getCurrentWeather = async (city) => {
  * Renders one day's hourly weather forecast for the searched city
  * @param {*} index day of the week
  */
-const getWeatherForecastOneDay = async (index, city) => {
-  let data;
-  if (!city) {
-    try {
-      city = getUserInput();
-    } catch (e) {
-      alert(e.message);
-      return;
-    }
-  }
-
-  try {
-    data = await getData(city);
-  } catch (e) {
-    console.error(e.message);
-    return;
-  }
+const getWeatherForecastOneDay = (index) => {
+  const data = WEATHER_DATA;
 
   const hours = data.forecast.forecastday[index].hour;
   const cards = hours.map((hour, i) => {
@@ -207,9 +185,9 @@ const getWeatherForecastOneDay = async (index, city) => {
     listItem.setAttribute("class", "forecast-card");
     const forecastCardMkp = `
   <li class="forecast-card ${currentTime ? "current-hour" : ""}" id="${id}">
-    <p id="time">${currentTime ? currentTime : convertedTime}</p>
-    <img id="weather-img" alt="weather image" src="https:${weatherIcon}">
-    <p id="temp">${temp}\u00B0C</p>
+    <p id=time-${id}">${currentTime ? currentTime : convertedTime}</p>
+    <img id="weather-img-${id}" alt="weather image" src="https:${weatherIcon}">
+    <p id="temp-${id}">${temp}\u00B0C</p>
   </li>
   `;
     return forecastCardMkp;
@@ -232,21 +210,17 @@ const getWeatherForecastOneDay = async (index, city) => {
   });
 };
 
+const collectWeatherForecastData = async () => {};
+
 /**
  * Render hourly weather forecast for next 2 days from the current day of the week
  * @param {*} day name of the week day
  */
-const renderWeatherForecast = async (day) => {
+const renderWeatherForecast = (day) => {
   // get weather data for a random city, for example hyderabad
   // at this point we need the data only to get the array of weather forecast
   // which is used to determine the index of the day for which hourly forecast is to be rendered
-  let data;
-  try {
-    data = await getData("hyderabad");
-  } catch (e) {
-    console.error(e.message);
-    return;
-  }
+  const data = WEATHER_DATA;
 
   // collect the date strings
   const dates = data.forecast.forecastday.map((item) => {
@@ -266,7 +240,7 @@ const renderWeatherForecast = async (day) => {
   }
 
   // render hourly forecast for the given day
-  return await getWeatherForecastOneDay(index);
+  return getWeatherForecastOneDay(index);
 };
 
 // get local date
@@ -322,8 +296,15 @@ const main = async () => {
 
   await renderDayTabs();
   loadingText.hidden = false;
-  await getCurrentWeather("Hyderabad");
-  await getWeatherForecastOneDay(0, "Hyderabad");
+  try {
+    WEATHER_DATA = await getData("Hyderabad");
+  } catch (e) {
+    console.error(e.message);
+    return;
+  }
+
+  getCurrentWeather();
+  getWeatherForecastOneDay(0, "Hyderabad");
   loadingText.hidden = true;
 
   searchBtn = document.querySelector(".search-btn");
@@ -334,17 +315,23 @@ const main = async () => {
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
     loadingText.hidden = false;
-    await getCurrentWeather();
-    await getWeatherForecastOneDay(0);
+    try {
+      WEATHER_DATA = await getData();
+    } catch (e) {
+      console.error(e.message);
+      return;
+    }
+    getCurrentWeather();
+    getWeatherForecastOneDay(0);
     loadingText.hidden = true;
   });
 
   const tabs = document.querySelectorAll("li a");
 
   for (let tab of tabs) {
-    tab.addEventListener("click", async (event) => {
+    tab.addEventListener("click", (event) => {
       const tabID = event.currentTarget.id;
-      await renderWeatherForecast(tabID);
+      renderWeatherForecast(tabID);
     });
   }
 };
