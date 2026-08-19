@@ -4,6 +4,7 @@ const WEATHER_API = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z]/;
 const loadingText = document.querySelector("#loadingText");
 let WEATHER_DATA;
+let HOURLY_FORECAST;
 /**
  * Get the name of the city from search input and return it only if the input is
  * non-empty string and has no numbers and special characters
@@ -56,6 +57,50 @@ const getData = async (city) => {
   }
 
   return response.json();
+};
+
+/**
+ * Collect the hourly weather forecast data for today, tomorrow and day after tomorrow
+ * @param {*} firstDay current day of the week
+ */
+const collectWeatherForecastData = (firstDay) => {
+  const forecastDay = WEATHER_DATA.forecast.forecastday;
+  HOURLY_FORECAST = {};
+  forecastDay.forEach((day) => {
+    const weekday = new Date(day.date + "T00:00:00").toLocaleDateString(
+      "en-US",
+      { weekday: "long" },
+    );
+
+    const arr = [];
+    day.hour.forEach((item) => {
+      let time;
+      const data = {};
+      const dateTime = item.time;
+      const date = new Date(dateTime.replace(" ", "T"));
+      const now = new Date();
+      if (weekday === firstDay) {
+        if (now.getHours() === date.getHours()) {
+          time = "Now";
+        }
+      }
+
+      if (!time) {
+        time = date
+          .toLocaleTimeString("en-US", { hour: "numeric", hour12: true })
+          .toLowerCase();
+      }
+
+      data["id"] = item.time_epoch;
+      data["time"] = time;
+      data["weatherIcon"] = item.condition.icon;
+      data["temp"] = item.temp_c;
+
+      arr.push(data);
+    });
+
+    HOURLY_FORECAST[weekday] = arr;
+  });
 };
 
 /**
@@ -147,47 +192,17 @@ const getCurrentWeather = () => {
 
 /**
  * Renders one day's hourly weather forecast for the searched city
- * @param {*} index day of the week
+ * @param {*} day day of the week
  */
-const getWeatherForecastOneDay = (index) => {
-  const data = WEATHER_DATA;
+const getWeatherForecastOneDay = (day) => {
+  const data = HOURLY_FORECAST[day];
 
-  const hours = data.forecast.forecastday[index].hour;
-  const cards = hours.map((hour, i) => {
-    let currentTime, convertedTime;
-    const dateTime = hour.time;
-    // adding T to make time according to format which JS Date
-    // parser understands (2026-08-11T08:00) ISO style date-time
-    const date = new Date(dateTime.replace(" ", "T"));
-    const now = new Date();
-    if (index === 0) {
-      if (date.getHours() === now.getHours()) {
-        currentTime = "Now";
-      }
-    }
-
-    if (!currentTime) {
-      convertedTime = date
-        .toLocaleTimeString("en-us", {
-          hour: "numeric",
-          hour12: true,
-        })
-        .toLowerCase();
-    }
-
-    const weatherIcon = hour.condition.icon;
-
-    const temp = Math.round(hour.temp_c);
-
-    const id = hour.time_epoch;
-
-    const listItem = document.createElement("li");
-    listItem.setAttribute("class", "forecast-card");
+  const cards = data.map((item) => {
     const forecastCardMkp = `
-  <li class="forecast-card ${currentTime ? "current-hour" : ""}" id="${id}">
-    <p id=time-${id}">${currentTime ? currentTime : convertedTime}</p>
-    <img id="weather-img-${id}" alt="weather image" src="https:${weatherIcon}">
-    <p id="temp-${id}">${temp}\u00B0C</p>
+  <li class="forecast-card ${item.time === "Now" ? "current-hour" : ""}" id="${item.id}">
+    <p id=time-${item.id}">${item.time}</p>
+    <img id="weather-img-${item.id}" alt="weather image" src="https:${item.weatherIcon}">
+    <p id="temp-${item.id}">${item.temp}\u00B0C</p>
   </li>
   `;
     return forecastCardMkp;
@@ -203,14 +218,14 @@ const getWeatherForecastOneDay = (index) => {
 
   forecastList.innerHTML = cards.join("\n");
   const currentHourItem = document.querySelector(".current-hour");
-  currentHourItem.scrollIntoView({
-    behavior: "smooth",
-    block: "nearest",
-    inline: "start",
-  });
+  if (currentHourItem) {
+    currentHourItem.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "start",
+    });
+  }
 };
-
-const collectWeatherForecastData = async () => {};
 
 /**
  * Render hourly weather forecast for next 2 days from the current day of the week
@@ -292,9 +307,15 @@ const renderDayTabs = async () => {
 
 // main function
 const main = async () => {
-  let searchBtn;
+  let searchBtn, firstDay;
 
   await renderDayTabs();
+  const firstTab = document.querySelector(".nav-item .nav-link");
+  if (!firstTab) {
+    console.error("First tab not found");
+    return;
+  }
+  firstDay = firstTab.innerText.trim();
   loadingText.hidden = false;
   try {
     WEATHER_DATA = await getData("Hyderabad");
@@ -303,8 +324,9 @@ const main = async () => {
     return;
   }
 
+  collectWeatherForecastData(firstDay);
   getCurrentWeather();
-  getWeatherForecastOneDay(0, "Hyderabad");
+  getWeatherForecastOneDay(firstDay, "Hyderabad");
   loadingText.hidden = true;
 
   searchBtn = document.querySelector(".search-btn");
@@ -321,8 +343,10 @@ const main = async () => {
       console.error(e.message);
       return;
     }
+
+    collectWeatherForecastData(firstDay);
     getCurrentWeather();
-    getWeatherForecastOneDay(0);
+    getWeatherForecastOneDay(firstDay);
     loadingText.hidden = true;
   });
 
@@ -330,8 +354,9 @@ const main = async () => {
 
   for (let tab of tabs) {
     tab.addEventListener("click", (event) => {
-      const tabID = event.currentTarget.id;
-      renderWeatherForecast(tabID);
+      const tabID = event.currentTarget.id.trim();
+      // renderWeatherForecast(tabID);
+      getWeatherForecastOneDay(tabID);
     });
   }
 };
