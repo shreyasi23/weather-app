@@ -112,3 +112,8 @@
 .loading-text-container {
   height: 30px;
 }
+
+.forecast-card img {
+  height: 50px;
+  width: 50px;
+}

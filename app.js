@@ -214,13 +214,20 @@ const getWeatherForecastOneDay = (day) => {
   const forecastList = document.querySelector("#forecastToday");
   if (!forecastList) {
     console.error("Element Forecast list not found");
-    const weatherData = document.querySelector("weather-data");
+    const weatherData = document.querySelector(".weather-data");
     weatherData.insertAdjacentElement("beforeend", `<p>Data not found</p>`);
     return;
   }
 
   forecastList.innerHTML = cards.join("\n");
   const currentHourItem = document.querySelector(".current-hour");
+  // used console logs for debugging scroll issue
+  /*console.log("current hour item: ", currentHourItem);
+  console.log("forecast list: ", forecastList);
+  console.log("current hour item offset: ", currentHourItem.offsetLeft);
+  console.log("list scroll left: ", forecastList.scrollLeft);
+  console.log("list width: ", forecastList.clientWidth);
+  console.log("list scroll width: ", forecastList.scrollWidth);*/
   if (currentHourItem) {
     currentHourItem.scrollIntoView({
       behavior: "smooth",
