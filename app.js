@@ -49,11 +49,14 @@ const getData = async (city) => {
   try {
     response = await fetch(url);
   } catch (e) {
-    throw new Error("Netwrok error");
+    throw new Error("Network error");
   }
 
   if (!response.ok) {
-    throw new Error(`HTTP Error, ${response.status}`);
+    const errorData = await response.json();
+    throw new Error(
+      errorData.error.message || `HTTP Error, ${response.status}`,
+    );
   }
 
   return response.json();
@@ -320,7 +323,8 @@ const main = async () => {
   try {
     WEATHER_DATA = await getData("Hyderabad");
   } catch (e) {
-    console.error(e.message);
+    loadingText.hidden = true;
+    alert(e.message);
     return;
   }
 
@@ -340,7 +344,8 @@ const main = async () => {
     try {
       WEATHER_DATA = await getData();
     } catch (e) {
-      console.error(e.message);
+      loadingText.hidden = true;
+      alert(e.message);
       return;
     }
 
