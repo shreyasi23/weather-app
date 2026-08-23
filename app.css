@@ -12,7 +12,6 @@
   min-height: 100vh;
   width: 100%;
   gap: 20px;
-  background-color: skyblue;
 }
 
 .weather-app-container {
@@ -85,12 +84,21 @@
   background-color: #fff;
 }
 
+.search-input:focus-visible {
+  outline: none;
+}
+
 .weather-data-credits {
   display: flex;
   gap: 5px;
   justify-content: flex-end;
   padding-top: 20px;
   font-size: 12px;
+}
+
+.weather-data-credits a {
+  text-decoration: none;
+  color: inherit;
 }
 
 .search-btn {
@@ -104,6 +112,14 @@
 .weather-forecast {
   display: flex;
   flex-direction: column;
+}
+
+.weather-forecast .nav.nav-underline .nav-link {
+  color: #000;
+}
+
+.weather-forecast .nav.nav-underline .nav-link.active {
+  color: #0d6efd;
 }
 
 .forecast-list {
@@ -135,6 +151,10 @@
   height: 130px;
   width: 70px;
   padding: 10px;
+}
+
+.forecast-card.current-hour p:first-of-type {
+  font-weight: 700;
 }
 
 .loading-text-container {

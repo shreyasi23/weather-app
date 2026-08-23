@@ -3,7 +3,7 @@
 // constants
 const API_KEY = "75122a74c0204989a3e23948260408";
 const WEATHER_API = `http://api.weatherapi.com/v1`;
-const nonLetterCharRegex = /[^a-zA-Z]/;
+const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
 let WEATHER_DATA;
 let HOURLY_FORECAST;
@@ -86,7 +86,6 @@ const getUserInput = () => {
   const city = userInput.value.toLowerCase();
   if (city.length === 0 || nonLetterCharRegex.test(city)) {
     throw new Error("Enter a valid city name");
-    return;
   }
   return city;
 };
@@ -98,21 +97,9 @@ const getUserInput = () => {
  * @returns weather data in JSON format
  **/
 const getData = async (city) => {
-  const nonLetterCharRegex = /[^a-zA-z]/;
-
   // get user input
   if (!city) {
-    try {
-      city = getUserInput();
-    } catch (e) {
-      alert(e.message);
-      return;
-    }
-
-    if (nonLetterCharRegex.test(city)) {
-      alert("Enter a valid city name");
-      return;
-    }
+    city = getUserInput();
   }
 
   const url = `${WEATHER_API}/forecast.json?key=${API_KEY}&q=${city.trim()}&days=5`;
@@ -274,7 +261,7 @@ const getWeatherForecastOneDay = (day) => {
   const cards = data.map((item) => {
     const forecastCardMkp = `
   <li class="forecast-card ${item.time === "Now" ? "current-hour" : ""}" id="${item.id}">
-    <p id=time-${item.id}">${item.time}</p>
+    <p id="time-${item.id}">${item.time}</p>
     <img id="weather-img-${item.id}" alt="weather image" src="https:${item.weatherIcon}">
     <p id="temp-${item.id}">${item.temp}\u00B0C</p>
   </li>
@@ -306,37 +293,6 @@ const getWeatherForecastOneDay = (day) => {
       inline: "start",
     });
   }
-};
-
-/**
- * Render hourly weather forecast for next 2 days from the current day of the week
- * @param {*} day name of the week day
- */
-const renderWeatherForecast = (day) => {
-  // get weather data for a random city, for example hyderabad
-  // at this point we need the data only to get the array of weather forecast
-  // which is used to determine the index of the day for which hourly forecast is to be rendered
-  const data = WEATHER_DATA;
-
-  // collect the date strings
-  const dates = data.forecast.forecastday.map((item) => {
-    return item.date;
-  });
-
-  // get the index of the day in the weather forecast array
-  const index = dates.findIndex((date) => {
-    const weekday = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-      weekday: "long",
-    });
-    return weekday === day;
-  });
-
-  if (!index || index !== -1) {
-    console.error("Requested day not found in data");
-  }
-
-  // render hourly forecast for the given day
-  return getWeatherForecastOneDay(index);
 };
 
 // get local date
@@ -375,10 +331,10 @@ const renderDayTabs = async () => {
     return;
   }
 
-  const tabs = days.map((day) => {
+  const tabs = days.map((day, i) => {
     return `
     <li class="nav-item">
-      <a class="nav-link" aria-current="page" href="#" id="${day}">${day}</a>
+      <a class="nav-link ${i === 0 ? "active" : ""}" aria-current="page" href="#" id="${day}">${day}</a>
     </li>
     `;
   });
@@ -396,7 +352,7 @@ const setBackgroundColor = () => {
     return;
   }
 
-  const isDay = data.current.is_day === "1";
+  const isDay = data.current.is_day === 1;
   if (!isDay) {
     if (!weatherAppContainer) {
       console.error("weather app container not found");
@@ -426,8 +382,8 @@ const main = async () => {
   try {
     WEATHER_DATA = await getData("Hyderabad");
   } catch (e) {
-    loadingText.hidden = true;
     alert(e.message);
+    loadingText.hidden = true;
     return;
   }
 
@@ -448,8 +404,8 @@ const main = async () => {
     try {
       WEATHER_DATA = await getData();
     } catch (e) {
-      loadingText.hidden = true;
       alert(e.message);
+      loadingText.hidden = true;
       return;
     }
 
@@ -464,8 +420,17 @@ const main = async () => {
 
   for (let tab of tabs) {
     tab.addEventListener("click", (event) => {
+      const activeTab = document.querySelector(
+        ".weather-forecast .nav.nav-underline .nav-link.active",
+      );
+      if (!activeTab) {
+        console.error("active tab not found");
+      } else {
+        activeTab.classList.toggle("active");
+      }
+
       const tabID = event.currentTarget.id.trim();
-      // renderWeatherForecast(tabID);
+      event.currentTarget.classList.toggle("active");
       getWeatherForecastOneDay(tabID);
     });
   }
