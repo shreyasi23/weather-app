@@ -1,7 +1,7 @@
 // import { weatherCodes } from "./weatherCodes";
 
 // constants
-const API_KEY = "75122a74c0204989a3e23948260408";
+const API_KEY = "weather_api_key";
 const WEATHER_API = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
