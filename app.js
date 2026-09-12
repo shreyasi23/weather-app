@@ -2,7 +2,7 @@
 
 // constants
 const API_KEY = "weather_api_key";
-const WEATHER_API = `http://api.weatherapi.com/v1`;
+const BASE_URL = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
 let WEATHER_DATA;
@@ -15,7 +15,6 @@ const weatherCodes = {
   1012: "cloudy",
   1015: "cloudy",
   1018: "cloudy",
-  1009: "cloudy",
   1021: "cloudy",
   1024: "cloudy",
   1027: "cloudy",
@@ -32,7 +31,6 @@ const weatherCodes = {
   1072: "snow",
   1087: "rainy",
   1114: "snow",
-  1117: "snow",
   1135: "snow",
   1147: "snow",
   1117: "snow",
@@ -83,7 +81,7 @@ const weatherCodes = {
  */
 const getUserInput = () => {
   const userInput = document.querySelector(".search-input");
-  const city = userInput.value.toLowerCase();
+  const city = userInput.value.toLowerCase().trim();
   if (city.length === 0 || nonLetterCharRegex.test(city)) {
     throw new Error("Enter a valid city name");
   }
@@ -102,7 +100,7 @@ const getData = async (city) => {
     city = getUserInput();
   }
 
-  const url = `${WEATHER_API}/forecast.json?key=${API_KEY}&q=${city.trim()}&days=5`;
+  const url = `${BASE_URL}/forecast.json?key=${API_KEY}&q=${city}&days=3`;
   let response;
   try {
     response = await fetch(url);
@@ -183,7 +181,7 @@ const setProp = (element, prop, value, elemName) => {
 /**
  * Render the current weather for a given city
  */
-const getCurrentWeather = () => {
+const renderCurrentWeather = () => {
   const data = WEATHER_DATA;
 
   const location = document.querySelector("#location");
@@ -255,7 +253,7 @@ const getCurrentWeather = () => {
  * Renders one day's hourly weather forecast for the searched city
  * @param {*} day day of the week
  */
-const getWeatherForecastOneDay = (day) => {
+const renderHourlyForecast = (day) => {
   const data = HOURLY_FORECAST[day];
 
   const cards = data.map((item) => {
@@ -293,13 +291,6 @@ const getWeatherForecastOneDay = (day) => {
       inline: "start",
     });
   }
-};
-
-// get local date
-const getDay = (date) => {
-  const now = new Date();
-  const day = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  return today;
 };
 
 /**
@@ -389,8 +380,8 @@ const main = async () => {
 
   setBackgroundColor();
   collectWeatherForecastData(firstDay);
-  getCurrentWeather();
-  getWeatherForecastOneDay(firstDay, "Hyderabad");
+  renderCurrentWeather();
+  renderHourlyForecast(firstDay, "Hyderabad");
   loadingText.hidden = true;
 
   searchBtn = document.querySelector(".search-btn");
@@ -411,8 +402,8 @@ const main = async () => {
 
     setBackgroundColor();
     collectWeatherForecastData(firstDay);
-    getCurrentWeather();
-    getWeatherForecastOneDay(firstDay);
+    renderCurrentWeather();
+    renderHourlyForecast(firstDay);
     loadingText.hidden = true;
   });
 
@@ -431,7 +422,7 @@ const main = async () => {
 
       const tabID = event.currentTarget.id.trim();
       event.currentTarget.classList.toggle("active");
-      getWeatherForecastOneDay(tabID);
+      renderHourlyForecast(tabID);
     });
   }
 };
