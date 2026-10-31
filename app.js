@@ -95,11 +95,6 @@ const getUserInput = () => {
  * @returns weather data in JSON format
  **/
 const getData = async (city) => {
-  // get user input
-  if (!city) {
-    city = getUserInput();
-  }
-
   const url = `${BASE_URL}/forecast.json?key=${API_KEY}&q=${city}&days=3`;
   let response;
   try {
@@ -216,9 +211,9 @@ const renderCurrentWeather = () => {
     "weatherCondition",
   );
 
-  const preciptation = document.querySelector("#preciptation");
+  const precipitation = document.querySelector("#precipitation");
   setProp(
-    preciptation,
+    precipitation,
     "textContent",
     `Precip: ${data.current.precip_mm} mm`,
     "precipitation",
@@ -245,7 +240,7 @@ const renderCurrentWeather = () => {
     feelsLikeText,
     "textContent",
     `Feels like ${Math.round(data.current.feelslike_c)}\u00B0C`,
-    "feels like",
+    "feelsLikeText",
   );
 };
 
@@ -271,7 +266,7 @@ const renderHourlyForecast = (day) => {
   if (!forecastList) {
     console.error("Element Forecast list not found");
     const weatherData = document.querySelector(".weather-data");
-    weatherData.insertAdjacentElement("beforeend", `<p>Data not found</p>`);
+    weatherData.insertAdjacentHTML("beforeend", `<p>Data not found</p>`);
     return;
   }
 
@@ -296,16 +291,7 @@ const renderHourlyForecast = (day) => {
 /**
  * render tabs with name of the present, tomorrow and day after tomorrow days
  */
-const renderDayTabs = async () => {
-  // get weather forecast data for 3 days from now
-  let data;
-  try {
-    data = await getData("hyderabad");
-  } catch (e) {
-    console.error(e.message);
-    return;
-  }
-
+const renderDayTabs = (data) => {
   // get the date strings and convert them into week day strings
   const dates = data.forecast.forecastday.map((item) => item.date);
   const days = dates.map((date) => {
@@ -318,8 +304,7 @@ const renderDayTabs = async () => {
   // create list items to render week days as tabs
   const tabsList = document.querySelector(".nav.nav-underline");
   if (!tabsList) {
-    console.error("tabs list not found");
-    return;
+    throw new Error("tabs list not found");
   }
 
   const tabs = days.map((day, i) => {
@@ -337,7 +322,6 @@ const renderDayTabs = async () => {
 const setBackgroundColor = () => {
   const data = WEATHER_DATA;
   const pageContent = document.querySelector(".page-content");
-  const weatherAppContainer = document.querySelector(".weather-app-container");
   if (!pageContent) {
     console.error("page content not found");
     return;
@@ -345,10 +329,6 @@ const setBackgroundColor = () => {
 
   const isDay = data.current.is_day === 1;
   if (!isDay) {
-    if (!weatherAppContainer) {
-      console.error("weather app container not found");
-      return;
-    }
     pageContent.classList = "page-content night";
     return;
   }
@@ -358,12 +338,41 @@ const setBackgroundColor = () => {
   pageContent.classList = `page-content ${weather}`;
 };
 
+// function to render weather data
+const renderWeatherData = async (city) => {
+  loadingText.hidden = false;
+  try {
+    if (!city) {
+      city = getUserInput();
+    }
+    WEATHER_DATA = await getData(city);
+  } catch (e) {
+    alert(e.message);
+    loadingText.hidden = true;
+    return;
+  }
+
+  try {
+    renderDayTabs(WEATHER_DATA);
+  } catch (e) {
+    console.error(e.message);
+    return;
+  }
+  const firstTab = document.querySelector(".nav-item .nav-link");
+  const firstDay = firstTab.innerText.trim();
+  setBackgroundColor();
+  collectWeatherForecastData(firstDay);
+  renderCurrentWeather();
+  renderHourlyForecast(firstDay);
+  loadingText.hidden = true;
+};
+
 // main function
 const main = async () => {
-  let searchBtn, firstDay;
+  let searchBtn;
 
-  await renderDayTabs();
-  const firstTab = document.querySelector(".nav-item .nav-link");
+  /*await renderDayTabs();
+  / const firstTab = document.querySelector(".nav-item .nav-link");
   if (!firstTab) {
     console.error("First tab not found");
     return;
@@ -381,9 +390,10 @@ const main = async () => {
   setBackgroundColor();
   collectWeatherForecastData(firstDay);
   renderCurrentWeather();
-  renderHourlyForecast(firstDay, "Hyderabad");
+  renderHourlyForecast(firstDay);
   loadingText.hidden = true;
-
+  */
+  await renderWeatherData("Hyderabad");
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
     console.log("Search button not found");
@@ -391,7 +401,7 @@ const main = async () => {
   }
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
-    loadingText.hidden = false;
+    /*loadingText.hidden = false;
     try {
       WEATHER_DATA = await getData();
     } catch (e) {
@@ -405,6 +415,8 @@ const main = async () => {
     renderCurrentWeather();
     renderHourlyForecast(firstDay);
     loadingText.hidden = true;
+    */
+    await renderWeatherData();
   });
 
   const tabs = document.querySelectorAll("li a");
@@ -417,11 +429,11 @@ const main = async () => {
       if (!activeTab) {
         console.error("active tab not found");
       } else {
-        activeTab.classList.toggle("active");
+        activeTab.classList.remove("active");
       }
 
       const tabID = event.currentTarget.id.trim();
-      event.currentTarget.classList.toggle("active");
+      event.currentTarget.classList.add("active");
       renderHourlyForecast(tabID);
     });
   }
