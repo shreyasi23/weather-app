@@ -349,51 +349,38 @@ const renderWeatherData = async (city) => {
   } catch (e) {
     alert(e.message);
     loadingText.hidden = true;
-    return;
+    throw e;
   }
 
   try {
     renderDayTabs(WEATHER_DATA);
   } catch (e) {
     console.error(e.message);
-    return;
+    throw e; // propagate the original error
   }
-  const firstTab = document.querySelector(".nav-item .nav-link");
-  const firstDay = firstTab.innerText.trim();
-  setBackgroundColor();
-  collectWeatherForecastData(firstDay);
-  renderCurrentWeather();
-  renderHourlyForecast(firstDay);
-  loadingText.hidden = true;
+
+  try {
+    const firstTab = document.querySelector(".nav-item .nav-link");
+    const firstDay = firstTab.innerText.trim();
+    setBackgroundColor();
+    collectWeatherForecastData(firstDay);
+    renderCurrentWeather();
+    renderHourlyForecast(firstDay);
+  } finally {
+    loadingText.hidden = true;
+  }
 };
 
 // main function
 const main = async () => {
   let searchBtn;
 
-  /*await renderDayTabs();
-  / const firstTab = document.querySelector(".nav-item .nav-link");
-  if (!firstTab) {
-    console.error("First tab not found");
-    return;
-  }
-  firstDay = firstTab.innerText.trim();
-  loadingText.hidden = false;
   try {
-    WEATHER_DATA = await getData("Hyderabad");
+    await renderWeatherData("Hyderabad");
   } catch (e) {
-    alert(e.message);
-    loadingText.hidden = true;
     return;
   }
 
-  setBackgroundColor();
-  collectWeatherForecastData(firstDay);
-  renderCurrentWeather();
-  renderHourlyForecast(firstDay);
-  loadingText.hidden = true;
-  */
-  await renderWeatherData("Hyderabad");
   searchBtn = document.querySelector(".search-btn");
   if (!searchBtn) {
     console.log("Search button not found");
@@ -401,42 +388,34 @@ const main = async () => {
   }
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
-    /*loadingText.hidden = false;
     try {
-      WEATHER_DATA = await getData();
+      await renderWeatherData();
     } catch (e) {
-      alert(e.message);
-      loadingText.hidden = true;
+      return;
+    }
+  });
+
+  const tab = document.querySelector("ul.nav.nav-underline");
+
+  tab.addEventListener("click", (e) => {
+    if (e.target.tagName.toLowerCase() !== "a") {
       return;
     }
 
-    setBackgroundColor();
-    collectWeatherForecastData(firstDay);
-    renderCurrentWeather();
-    renderHourlyForecast(firstDay);
-    loadingText.hidden = true;
-    */
-    await renderWeatherData();
+    const activeTab = document.querySelector(
+      ".weather-forecast .nav.nav-underline .nav-link.active",
+    );
+
+    if (!activeTab) {
+      console.error("active tab not found");
+    } else {
+      activeTab.classList.remove("active");
+    }
+
+    const tabID = e.target.id.trim();
+    e.target.classList.add("active");
+    renderHourlyForecast(tabID);
   });
-
-  const tabs = document.querySelectorAll("li a");
-
-  for (let tab of tabs) {
-    tab.addEventListener("click", (event) => {
-      const activeTab = document.querySelector(
-        ".weather-forecast .nav.nav-underline .nav-link.active",
-      );
-      if (!activeTab) {
-        console.error("active tab not found");
-      } else {
-        activeTab.classList.remove("active");
-      }
-
-      const tabID = event.currentTarget.id.trim();
-      event.currentTarget.classList.add("active");
-      renderHourlyForecast(tabID);
-    });
-  }
 };
 
 main();
