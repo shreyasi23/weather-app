@@ -118,7 +118,8 @@
   color: #000;
 }
 
-.weather-forecast .nav.nav-underline .nav-link.active {
+.weather-forecast .nav.nav-underline .nav-link.active,
+.night .weather-forecast .nav.nav-underline .nav-link.active {
   color: #0d6efd;
 }
 
@@ -184,6 +185,10 @@
 
 .night {
   background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #334155 100%);
+  color: #f8fafc;
+}
+
+.night .weather-forecast .nav.nav-underline .nav-link {
   color: #f8fafc;
 }
 
