@@ -5,8 +5,6 @@ const API_KEY = "weather_api_key";
 const BASE_URL = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
-let WEATHER_DATA;
-let HOURLY_FORECAST;
 const weatherCodes = {
   1000: "sunny",
   1003: "cloudy",
@@ -117,8 +115,8 @@ const getData = async (city) => {
  * Collect the hourly weather forecast data for today, tomorrow and day after tomorrow
  * @param {*} firstDay current day of the week
  */
-const collectWeatherForecastData = (firstDay) => {
-  const forecastDay = WEATHER_DATA.forecast.forecastday;
+const collectWeatherForecastData = (firstDay, weatherData) => {
+  const forecastDay = weatherData.forecast.forecastday;
   HOURLY_FORECAST = {};
   forecastDay.forEach((day) => {
     const weekday = new Date(day.date + "T00:00:00").toLocaleDateString(
@@ -155,6 +153,7 @@ const collectWeatherForecastData = (firstDay) => {
 
     HOURLY_FORECAST[weekday] = arr;
   });
+  return HOURLY_FORECAST;
 };
 
 /**
@@ -176,14 +175,14 @@ const setProp = (element, prop, value, elemName) => {
 /**
  * Render the current weather for a given city
  */
-const renderCurrentWeather = () => {
-  const data = WEATHER_DATA;
+const renderCurrentWeather = (weatherData) => {
+  // const data = WEATHER_DATA;
 
   const location = document.querySelector("#location");
   setProp(
     location,
     "textContent",
-    `${data.location.name}, ${data.location.region}`,
+    `${weatherData.location.name}, ${weatherData.location.region}`,
     "location",
   );
 
@@ -191,7 +190,7 @@ const renderCurrentWeather = () => {
   setProp(
     currentTemp,
     "textContent",
-    `${Math.round(data.current.temp_c)}\u00B0C`,
+    `${Math.round(weatherData.current.temp_c)}\u00B0C`,
     "currentTemp",
   );
 
@@ -199,7 +198,7 @@ const renderCurrentWeather = () => {
   setProp(
     currentTempImg,
     "src",
-    `https:${data.current.condition.icon}`,
+    `https:${weatherData.current.condition.icon}`,
     "currentTempImg",
   );
 
@@ -207,7 +206,7 @@ const renderCurrentWeather = () => {
   setProp(
     weatherCondition,
     "textContent",
-    data.current.condition.text,
+    weatherData.current.condition.text,
     "weatherCondition",
   );
 
@@ -215,7 +214,7 @@ const renderCurrentWeather = () => {
   setProp(
     precipitation,
     "textContent",
-    `Precip: ${data.current.precip_mm} mm`,
+    `Precip: ${weatherData.current.precip_mm} mm`,
     "precipitation",
   );
 
@@ -223,7 +222,7 @@ const renderCurrentWeather = () => {
   setProp(
     humidity,
     "textContent",
-    `Humidity: ${data.current.humidity}%`,
+    `Humidity: ${weatherData.current.humidity}%`,
     "humidity",
   );
 
@@ -231,7 +230,7 @@ const renderCurrentWeather = () => {
   setProp(
     windSpeed,
     "textContent",
-    `Wind speed: ${data.current.wind_kph} Kph`,
+    `Wind speed: ${weatherData.current.wind_kph} Kph`,
     "windSpeed",
   );
 
@@ -239,7 +238,7 @@ const renderCurrentWeather = () => {
   setProp(
     feelsLikeText,
     "textContent",
-    `Feels like ${Math.round(data.current.feelslike_c)}\u00B0C`,
+    `Feels like ${Math.round(weatherData.current.feelslike_c)}\u00B0C`,
     "feelsLikeText",
   );
 };
@@ -248,8 +247,8 @@ const renderCurrentWeather = () => {
  * Renders one day's hourly weather forecast for the searched city
  * @param {*} day day of the week
  */
-const renderHourlyForecast = (day) => {
-  const data = HOURLY_FORECAST[day];
+const renderHourlyForecast = (day, hourlyForecast) => {
+  const data = hourlyForecast[day];
 
   const cards = data.map((item) => {
     const forecastCardMkp = `
@@ -291,9 +290,9 @@ const renderHourlyForecast = (day) => {
 /**
  * render tabs with name of the present, tomorrow and day after tomorrow days
  */
-const renderDayTabs = (data) => {
+const renderDayTabs = (weatherData) => {
   // get the date strings and convert them into week day strings
-  const dates = data.forecast.forecastday.map((item) => item.date);
+  const dates = weatherData.forecast.forecastday.map((item) => item.date);
   const days = dates.map((date) => {
     const day = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
       weekday: "long",
@@ -319,33 +318,34 @@ const renderDayTabs = (data) => {
 };
 
 // set background color
-const setBackgroundColor = () => {
-  const data = WEATHER_DATA;
+const setBackgroundColor = (weatherData) => {
+  // const data = WEATHER_DATA;
   const pageContent = document.querySelector(".page-content");
   if (!pageContent) {
     console.error("page content not found");
     return;
   }
 
-  const isDay = data.current.is_day === 1;
+  const isDay = weatherData.current.is_day === 1;
   if (!isDay) {
     pageContent.classList = "page-content night";
     return;
   }
 
-  const code = data.current.condition.code;
+  const code = weatherData.current.condition.code;
   const weather = weatherCodes[code];
   pageContent.classList = `page-content ${weather}`;
 };
 
 // function to render weather data
 const renderWeatherData = async (city) => {
+  let weatherData;
   loadingText.hidden = false;
   try {
     if (!city) {
       city = getUserInput();
     }
-    WEATHER_DATA = await getData(city);
+    weatherData = await getData(city);
   } catch (e) {
     alert(e.message);
     loadingText.hidden = true;
@@ -353,19 +353,20 @@ const renderWeatherData = async (city) => {
   }
 
   try {
-    renderDayTabs(WEATHER_DATA);
+    renderDayTabs(weatherData);
   } catch (e) {
     console.error(e.message);
+    loadingText.hidden = true;
     throw e; // propagate the original error
   }
 
   try {
     const firstTab = document.querySelector(".nav-item .nav-link");
     const firstDay = firstTab.innerText.trim();
-    setBackgroundColor();
-    collectWeatherForecastData(firstDay);
-    renderCurrentWeather();
-    renderHourlyForecast(firstDay);
+    setBackgroundColor(weatherData);
+    const hourlyForecast = collectWeatherForecastData(firstDay, weatherData);
+    renderCurrentWeather(weatherData);
+    renderHourlyForecast(firstDay, hourlyForecast);
   } finally {
     loadingText.hidden = true;
   }
