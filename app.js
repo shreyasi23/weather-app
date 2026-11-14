@@ -1,11 +1,11 @@
-// import { weatherCodes } from "./weatherCodes";
+import { weatherCodes } from "./weatherCodes.js";
 
 // constants
-const API_KEY = "weather_api_key";
+const API_KEY = "c9a036833df44f178d9131049262908";
 const BASE_URL = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
-const weatherCodes = {
+/*const weatherCodes = {
   1000: "sunny",
   1003: "cloudy",
   1006: "cloudy",
@@ -70,7 +70,7 @@ const weatherCodes = {
   1249: "rainy",
   1279: "snow",
   1282: "snow",
-};
+};*/
 
 /**
  * Get the name of the city from search input and return it only if the input is
@@ -117,7 +117,7 @@ const getData = async (city) => {
  */
 const collectWeatherForecastData = (firstDay, weatherData) => {
   const forecastDay = weatherData.forecast.forecastday;
-  HOURLY_FORECAST = {};
+  const hourlyForecast = {};
   forecastDay.forEach((day) => {
     const weekday = new Date(day.date + "T00:00:00").toLocaleDateString(
       "en-US",
@@ -151,9 +151,9 @@ const collectWeatherForecastData = (firstDay, weatherData) => {
       arr.push(data);
     });
 
-    HOURLY_FORECAST[weekday] = arr;
+    hourlyForecast[weekday] = arr;
   });
-  return HOURLY_FORECAST;
+  return hourlyForecast;
 };
 
 /**
@@ -375,7 +375,6 @@ const renderWeatherData = async (city) => {
 // main function
 const main = async () => {
   let searchBtn;
-
   try {
     await renderWeatherData("Hyderabad");
   } catch (e) {
