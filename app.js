@@ -1,76 +1,10 @@
 import { weatherCodes } from "./weatherCodes.js";
 
 // constants
-const API_KEY = "c9a036833df44f178d9131049262908";
+const API_KEY = "weather_api_key";
 const BASE_URL = `http://api.weatherapi.com/v1`;
 const nonLetterCharRegex = /[^a-zA-Z ]/;
 const loadingText = document.querySelector("#loadingText");
-/*const weatherCodes = {
-  1000: "sunny",
-  1003: "cloudy",
-  1006: "cloudy",
-  1009: "cloudy",
-  1012: "cloudy",
-  1015: "cloudy",
-  1018: "cloudy",
-  1021: "cloudy",
-  1024: "cloudy",
-  1027: "cloudy",
-  1030: "cloudy",
-  1033: "cloudy",
-  1036: "cloudy",
-  1039: "cloudy",
-  1042: "cloudy",
-  1045: "cloudy",
-  1048: "cloudy",
-  1063: "rainy",
-  1066: "snow",
-  1069: "snow",
-  1072: "snow",
-  1087: "rainy",
-  1114: "snow",
-  1135: "snow",
-  1147: "snow",
-  1117: "snow",
-  1050: "rainy",
-  1153: "rainy",
-  1168: "snow",
-  1171: "snow",
-  1180: "rainy",
-  1183: "rainy",
-  1186: "rainy",
-  1153: "rainy",
-  1189: "rainy",
-  1192: "rainy",
-  1195: "rainy",
-  1198: "rainy",
-  1201: "rainy",
-  1204: "snow",
-  1207: "snow",
-  1210: "snow",
-  1213: "snow",
-  1216: "snow",
-  1219: "snow",
-  1222: "snow",
-  1204: "snow",
-  1225: "snow",
-  1237: "snow",
-  1204: "snow",
-  1240: "rainy",
-  1243: "rainy",
-  1246: "rainy",
-  1249: "rainy",
-  1252: "snow",
-  1255: "snow",
-  1258: "snow",
-  1261: "snow",
-  1264: "snow",
-  1273: "rainy",
-  1276: "rainy",
-  1249: "rainy",
-  1279: "snow",
-  1282: "snow",
-};*/
 
 /**
  * Get the name of the city from search input and return it only if the input is
@@ -339,7 +273,7 @@ const setBackgroundColor = (weatherData) => {
 
 // function to render weather data
 const renderWeatherData = async (city) => {
-  let weatherData;
+  let weatherData, hourlyForecast;
   loadingText.hidden = false;
   try {
     if (!city) {
@@ -364,19 +298,20 @@ const renderWeatherData = async (city) => {
     const firstTab = document.querySelector(".nav-item .nav-link");
     const firstDay = firstTab.innerText.trim();
     setBackgroundColor(weatherData);
-    const hourlyForecast = collectWeatherForecastData(firstDay, weatherData);
+    hourlyForecast = collectWeatherForecastData(firstDay, weatherData);
     renderCurrentWeather(weatherData);
     renderHourlyForecast(firstDay, hourlyForecast);
   } finally {
     loadingText.hidden = true;
   }
+  return hourlyForecast;
 };
 
 // main function
 const main = async () => {
-  let searchBtn;
+  let searchBtn, hourlyForecast;
   try {
-    await renderWeatherData("Hyderabad");
+    hourlyForecast = await renderWeatherData("Hyderabad");
   } catch (e) {
     return;
   }
@@ -389,7 +324,7 @@ const main = async () => {
   searchBtn.addEventListener("click", async (event) => {
     event.preventDefault();
     try {
-      await renderWeatherData();
+      hourlyForecast = await renderWeatherData();
     } catch (e) {
       return;
     }
@@ -414,7 +349,7 @@ const main = async () => {
 
     const tabID = e.target.id.trim();
     e.target.classList.add("active");
-    renderHourlyForecast(tabID);
+    renderHourlyForecast(tabID, hourlyForecast);
   });
 };
 
