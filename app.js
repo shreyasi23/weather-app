@@ -20,12 +20,16 @@ const getUserInput = () => {
   return city;
 };
 
-/** getData function fetches weather data
- * @param city - name of the city for which weather data is requested
- * @param requirment - type of weather information to be fetched. It takes two values current and forecast.
- * current fetches the weather at the point of time when the request is made and forecast fetches weather for 3 days and each hour of the day
- * @returns weather data in JSON format
- **/
+/**
+ * Fetches weather forecast data for a specified city.
+ *
+ * Makes an API request to retrieve a 3-day forecast, including
+ * current weather conditions and hourly forecasts for each day.
+ *
+ * @param {string} city - The name of the city for which weather data is requested.
+ * @returns {Promise<Object>} A promise that resolves to the weather data returned by the API.
+ * @throws {Error} If the network request fails or the API returns an unsuccessful response.
+ */
 const getData = async (city) => {
   const url = `${BASE_URL}/forecast.json?key=${API_KEY}&q=${city}&days=3`;
   let response;
@@ -46,9 +50,18 @@ const getData = async (city) => {
 };
 
 /**
- * Collect the hourly weather forecast data for today, tomorrow and day after tomorrow
- * @param {*} firstDay current day of the week
+ * Collects and organizes hourly weather forecast data for the next three days.
+ *
+ * Extracts hourly weather information from the API response and organizes it
+ * by weekday. Each hourly forecast entry contains a unique ID, time, weather
+ * icon URL, and temperature in Celsius. The current hour is labeled as "Now"
+ * for the current day.
+ *
+ * @param {string} firstDay - The weekday name of the current day (e.g., "Monday").
+ * @param {Object} weatherData - The weather data returned by the API.
+ * @returns {Object} An object containing hourly forecast data grouped by weekday.
  */
+
 const collectWeatherForecastData = (firstDay, weatherData) => {
   const forecastDay = weatherData.forecast.forecastday;
   const hourlyForecast = {};
@@ -110,8 +123,6 @@ const setProp = (element, prop, value, elemName) => {
  * Render the current weather for a given city
  */
 const renderCurrentWeather = (weatherData) => {
-  // const data = WEATHER_DATA;
-
   const location = document.querySelector("#location");
   setProp(
     location,
@@ -178,8 +189,15 @@ const renderCurrentWeather = (weatherData) => {
 };
 
 /**
- * Renders one day's hourly weather forecast for the searched city
- * @param {*} day day of the week
+ * Renders the hourly weather forecast for a specified day.
+ *
+ * Generates forecast cards using the provided hourly forecast data and
+ * inserts them into the forecast list. If the current hour is available,
+ * its card is highlighted and automatically scrolled into view.
+ *
+ * @param {string} day - The weekday for which the hourly forecast is to be rendered (e.g., "Monday").
+ * @param {Object} hourlyForecast - An object containing hourly forecast data grouped by weekday.
+ * @returns {void}
  */
 const renderHourlyForecast = (day, hourlyForecast) => {
   const data = hourlyForecast[day];
@@ -222,7 +240,13 @@ const renderHourlyForecast = (day, hourlyForecast) => {
 };
 
 /**
- * render tabs with name of the present, tomorrow and day after tomorrow days
+ * Renders day tabs for the current day and the following two days.
+ *
+ * Extracts the forecast dates from the API response and converts them
+ * into weekday names to be displayed as tab labels.
+ *
+ * @param {Object} weatherData - The weather data returned by the API.
+ * @returns {void}
  */
 const renderDayTabs = (weatherData) => {
   // get the date strings and convert them into week day strings
@@ -251,7 +275,16 @@ const renderDayTabs = (weatherData) => {
   tabsList.innerHTML = tabs.join("\n");
 };
 
-// set background color
+/**
+ * Sets the page background based on the current weather conditions.
+ *
+ * Determines whether it is day or night and applies the corresponding CSS
+ * class to the page content. During the day, the CSS class is determined
+ * by the current weather condition code.
+ *
+ * @param {Object} weatherData - The weather data returned by the API.
+ * @returns {void}
+ */
 const setBackgroundColor = (weatherData) => {
   // const data = WEATHER_DATA;
   const pageContent = document.querySelector(".page-content");
@@ -271,7 +304,20 @@ const setBackgroundColor = (weatherData) => {
   pageContent.classList = `page-content ${weather}`;
 };
 
-// function to render weather data
+/**
+ * Fetches and renders weather data for the specified city.
+ *
+ * Retrieves weather data from the API, renders the forecast day tabs,
+ * updates the page background based on current weather conditions,
+ * and displays the current weather and hourly forecast for the first day.
+ * Hides the loading indicator after the rendering process completes.
+ *
+ * @param {string} [city] - The name of the city to fetch weather data for.
+ * If omitted, the city is obtained from the user's input.
+ * @returns {Promise<Object>} A promise that resolves to the hourly forecast
+ * data grouped by weekday.
+ * @throws {Error} If fetching weather data or rendering the day tabs fails.
+ */
 const renderWeatherData = async (city) => {
   let weatherData, hourlyForecast;
   loadingText.hidden = false;
